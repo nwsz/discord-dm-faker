@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>fakecord: nwsz | Gemini Pro Edition</title>
+    <title>fakecord; app</title>
     
     <link rel="icon" type="image/png" href="https://em-content.zobj.net/source/microsoft/379/crocodile_1f40a.png">
     
@@ -445,7 +445,7 @@
                 }
             }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = `fakecord-${Date.now()}.png`;
+                link.download = `msg-fc-${Date.now()}.png`;
                 link.href = canvas.toDataURL('image/png', 1.0);
                 link.click();
                 selectBlock(currentBlock);

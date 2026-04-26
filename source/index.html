@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>fakecord</title>
+    <link rel="icon" type="image/png" href="https://em-content.zobj.net/source/microsoft/379/crocodile_1f40a.png">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/twemoji@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-app: #0e0e11;
+            --bg-sidebar: #141416;
+            --panel-bg: #28292e;
+            --border: rgba(255,255,255,0.06);
+            --text: #e3e3e3;
+            --muted: #6b6b6b;
+            --brand: #dfdfdf;
+            --brand-h: #aecbfa;
+            --danger: #f28b82;
+            --dc-bg: #313338;
+            --dc-text: #dbdee1;
+            --dc-muted: #949ba4;
+            --embed-bg: #2b2d31;
+            --mention-bg: rgba(88,101,242,0.15);
+            --mention-c: #c9cdfb;
+            --ping-bg: rgba(240,178,50,0.1);
+            --ping-b: #f0b232;
+        }
+        ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#3c4043;border-radius:10px}::-webkit-scrollbar-thumb:hover{background:#5f6368}
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{display:flex;flex-direction:column;height:100vh;font-family:'Inter',sans-serif;background:var(--bg-app);color:var(--text);overflow:hidden}
+
+        /* BANNER */
+        #banner{background:linear-gradient(90deg,#4b90ff,#ff5546,#8e55ff);background-size:200% auto;color:#fff;padding:7px 20px;display:flex;justify-content:center;align-items:center;font-size:12px;font-weight:500;position:relative;animation:gm 5s ease infinite;flex-shrink:0}
+        @keyframes gm{0%{background-position:0%}50%{background-position:100%}100%{background-position:0%}}
+        .close-x{position:absolute;right:14px;cursor:pointer;opacity:.7;transition:.2s;display:flex}
+        .close-x:hover{opacity:1;transform:scale(1.1)}
+
+        /* LAYOUT */
+        #layout{display:flex;flex:1;overflow:hidden}
+        #sidebar{width:355px;background:var(--bg-sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:10;flex-shrink:0}
+        .s-head{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px}
+        .s-head h1{font-size:17px;font-weight:700;color:#fff;display:flex;align-items:center;gap:7px;white-space:nowrap}
+        .s-scroll{padding:12px;display:flex;flex-direction:column;gap:9px;overflow-y:auto;flex:1}
+
+        /* PANELS */
+        .p{background:var(--panel-bg);border:1px solid var(--border);border-radius:14px;padding:13px;display:flex;flex-direction:column;gap:8px}
+        .p-lbl{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+        .p.dp{background:rgba(88,101,242,.07);border-color:rgba(88,101,242,.22)}
+        .p.dp .p-lbl{color:#7289da}
+        .p-div{height:1px;background:var(--border);margin:1px 0}
+
+        /* BUTTONS + INPUTS */
+        button,input[type=text],input[type=password]{width:100%;background:#1a1a1c;border:1px solid transparent;color:var(--text);padding:9px 13px;border-radius:9px;font-size:12px;font-family:inherit;transition:.15s;outline:none;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+        input[type=text]:focus,input[type=password]:focus{border-color:#5865f2;background:#111}
+        input[type=color]{width:100%;background:#1a1a1c;border:1px solid transparent;padding:5px 12px;border-radius:9px;cursor:pointer;height:38px}
+        button:hover{background:#252529}
+        button.pri{background:var(--brand);color:#000;font-weight:700;border:none}
+        button.pri:hover{background:var(--brand-h)}
+        button.dc{background:#5865f2;color:#fff;border:none}
+        button.dc:hover{background:#4752c4}
+        button.gn{background:#23a55a;color:#fff;border:none}
+        button.gn:hover{background:#1a8f4a}
+        button.am{background:rgba(240,178,50,.1);color:#f0b232;border:1px solid rgba(240,178,50,.22)}
+        button.am:hover{background:rgba(240,178,50,.2)}
+        button.gh{background:transparent;border:1px solid var(--border);color:var(--muted)}
+        button.gh:hover{background:var(--panel-bg);color:var(--text)}
+        button:disabled{opacity:.35;pointer-events:none}
+        .g2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+        .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+
+        /* TABS */
+        .tabs{display:flex;gap:3px;background:#111;border-radius:7px;padding:3px}
+        .tab{flex:1;padding:6px;border-radius:5px;font-size:11px;font-weight:600;text-align:center;cursor:pointer;color:var(--muted);transition:.15s;background:transparent;border:none;width:auto}
+        .tab.on{background:var(--panel-bg);color:#fff}
+        .tab:hover{color:#fff}
+        .tp{display:none;flex-direction:column;gap:7px}
+        .tp.on{display:flex}
+
+        /* BRIDGE */
+        #bdot{width:8px;height:8px;border-radius:50%;background:#444;transition:.3s;flex-shrink:0}
+        #bdot.ok{background:#23a55a;box-shadow:0 0 5px #23a55a}
+        #bdot.err{background:#f28b82}
+        #blbl{font-size:11px;color:var(--muted)}
+
+        /* STATUS */
+        .sbar{font-size:11px;padding:7px 10px;border-radius:7px;text-align:center;display:none;line-height:1.4}
+        .sbar.ld{display:block;background:rgba(88,101,242,.1);color:#7289da}
+        .sbar.ok{display:block;background:rgba(35,165,90,.1);color:#23a55a}
+        .sbar.er{display:block;background:rgba(242,139,130,.1);color:#f28b82}
+
+        /* STEPS */
+        .step{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+        .sn{width:15px;height:15px;background:rgba(88,101,242,.3);color:#7289da;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0}
+
+        /* USER CARD */
+        #ucard{display:none;background:#111;border-radius:9px;padding:9px;gap:9px;align-items:center}
+        #ucard.show{display:flex}
+        .uca{position:relative;width:38px;height:38px;flex-shrink:0}
+        .uca img.av{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #5865f2;display:block}
+        
+        /* SCALING FIX: Changed 176% to 120% for perfect fit */
+        .uca img.dv{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:120%;height:120%;pointer-events:none;object-fit:contain;z-index:5;display:none}
+        .ui{flex:1;min-width:0}
+        .un{font-weight:600;font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .uh{font-size:10px;color:var(--muted)}
+        .ubs{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap}
+        .bdg{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700}
+        .b-bot{background:rgba(88,101,242,.4);color:#c9cdfb}
+        .b-nit{background:rgba(255,105,180,.2);color:#ff69b4}
+        .b-cln{background:rgba(255,185,0,.18);color:#ffb900}
+
+        /* WORKSPACE */
+        #ws{flex-grow:1;display:flex;flex-direction:column;align-items:center;overflow-y:auto;background:#0e0e11;padding:28px 36px}
+        #cbar{width:100%;max-width:750px;display:flex;align-items:center;gap:8px;margin-bottom:5px;padding:0 4px;color:var(--dc-muted);font-size:13px;flex-shrink:0;display:none}
+        #cname{font-weight:600;color:var(--dc-text);outline:none;min-width:20px}
+        #ec{width:100%;max-width:750px;background:var(--dc-bg);border-radius:8px;padding:14px 0;color:var(--dc-text);box-shadow:0 8px 32px rgba(0,0,0,.5);flex-shrink:0}
+
+        /* MESSAGES */
+        .mb{padding:4px 0;position:relative;border-left:2px solid transparent;transition:.15s}
+        .mb.sel{background:rgba(255,255,255,.04)}
+        .mb.pinged{background:var(--ping-bg);border-left-color:var(--ping-b)}
+        .bc{position:absolute;right:13px;top:-13px;background:#1e1f22;border:1px solid var(--border);border-radius:4px;display:none;gap:1px;padding:2px;z-index:20}
+        .mb:hover .bc{display:flex}
+        .cb{width:25px;height:25px;display:flex;align-items:center;justify-content:center;color:var(--dc-muted);cursor:pointer;border-radius:3px;background:transparent;border:none;padding:0}
+        .cb:hover{background:#35373c;color:#fff}
+        .cb.del:hover{background:var(--danger);color:#fff}
+
+        .mm{display:flex;padding:2px 16px}
+
+        /* AVATAR SLOT */
+        .avs{width:40px;height:40px;flex-shrink:0;margin-right:16px;position:relative;cursor:pointer}
+        .avs img.av{width:40px;height:40px;border-radius:50%;object-fit:cover;display:block}
+        
+        /* SCALING FIX: Changed 176% to 120% for perfect fit */
+        .avs img.dc{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:120%;height:120%;pointer-events:none;object-fit:contain;z-index:5}
+
+        .cnt{flex:1;min-width:0}
+        .uh2{display:flex;align-items:baseline;flex-wrap:wrap;gap:0;line-height:1.4}
+        .uname{font-weight:500;font-size:1rem;color:#fff;outline:none;margin-right:4px}
+        .btag{background:#5865f2;color:#fff;font-size:9px;font-weight:800;padding:1px 4px;border-radius:3px;display:inline-flex;align-items:center;gap:2px;vertical-align:middle;margin-right:3px}
+        
+        /* CLAN TAG FIX: Updated to look like the authentic Discord pill UI */
+        .ctag{display:inline-flex;align-items:center;gap:3px;background:#232428;border-radius:4px;padding:1px 4px;font-size:11px;font-weight:600;color:var(--dc-text);vertical-align:middle;margin-right:4px}
+        .ctag img{width:12px;height:12px;object-fit:contain}
+        
+        .ts{font-size:.72rem;color:var(--dc-muted);margin-left:2px;vertical-align:middle}
+        .etag{font-size:.65rem;color:var(--dc-muted);margin-left:4px;vertical-align:middle;opacity:.7}
+        .ri{width:16px;height:16px;vertical-align:middle;margin-left:3px;cursor:pointer}
+        .tb{line-height:1.375rem;outline:none;word-break:break-word;white-space:pre-wrap;font-size:.9375rem;margin-top:2px}
+
+        .sub{padding:2px 16px 2px 72px;position:relative;min-height:22px}
+        .rmb{position:absolute;right:13px;top:2px;opacity:0;background:#1e1f22;color:var(--danger);border:1px solid var(--border);border-radius:4px;width:21px;height:21px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;z-index:5;pointer-events:none;padding:0}
+        .sub:hover .rmb,.ew:hover .rmb,.aw:hover .rmb{opacity:1;pointer-events:auto}
+
+        .ma{display:flex;flex-direction:column;gap:6px}
+        .aw{margin:4px 0 4px 72px;position:relative;display:inline-flex;max-width:520px;border-radius:8px;overflow:hidden}
+        .aw img{max-width:100%;max-height:350px;border-radius:8px;object-fit:contain;display:block}
+        .ew{margin:4px 0 4px 72px;max-width:520px;position:relative;border-radius:4px;overflow:hidden;display:flex;background:var(--embed-bg)}
+        .ep{width:4px;flex-shrink:0;cursor:pointer}
+        .eb{padding:12px 14px;width:100%;display:flex;flex-direction:column;gap:6px}
+        .ea{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#fff}
+        .ea img{width:18px;height:18px;border-radius:50%;cursor:pointer}
+        .et{font-weight:700;font-size:14px;color:#00a8fc;outline:none}
+        .ed{font-size:13px;outline:none}
+
+        .rxrow{display:flex;gap:4px;margin:4px 0 2px 72px;flex-wrap:wrap}
+        .rx{background:#2b2d31;border:1px solid transparent;border-radius:8px;padding:2px 8px;display:flex;align-items:center;gap:5px;cursor:pointer;transition:.1s}
+        .rx.on{background:var(--mention-bg);border-color:#5865f2}
+        .re{font-size:15px;outline:none}
+        .rc{font-size:11px;font-weight:700;color:#b5bac1;outline:none}
+
+        .typr{padding:3px 16px 3px 72px;font-size:12px;color:var(--dc-muted);display:none;align-items:center;gap:6px}
+        .typr.show{display:flex}
+        .tdots span{display:inline-block;width:5px;height:5px;background:var(--dc-muted);border-radius:50%;animation:td .9s ease infinite}
+        .tdots span:nth-child(2){animation-delay:.15s}
+        .tdots span:nth-child(3){animation-delay:.3s}
+        @keyframes td{0%,80%,100%{transform:scale(.7);opacity:.5}40%{transform:scale(1);opacity:1}}
+
+        .cdiv{display:flex;align-items:center;gap:10px;margin:4px 16px 8px;color:var(--dc-muted);font-size:11px;font-weight:600}
+        .cdiv::before,.cdiv::after{content:'';flex:1;height:1px;background:var(--border)}
+
+        .mention{background:var(--mention-bg);color:var(--mention-c);padding:0 2px;border-radius:3px;font-weight:500}
+        .dcl{color:#00a8fc;text-decoration:none}
+        img.emoji{height:1.25em;width:1.25em;vertical-align:-.2em;margin:0 .07em}
+        .hidden{display:none!important}
+
+        /* MODAL */
+        .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;align-items:center;justify-content:center}
+        .mo.open{display:flex}
+        .md{background:#1e1f22;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px;width:410px;max-width:94vw;display:flex;flex-direction:column;gap:13px}
+        .md h2{font-size:16px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
+        .md p{font-size:12px;color:var(--muted);line-height:1.6}
+        .md .wn{background:rgba(240,178,50,.08);border:1px solid rgba(240,178,50,.22);border-radius:7px;padding:9px;font-size:11px;color:#f0b232;line-height:1.6}
+        .md input{margin:0}
+        .mbtns{display:flex;gap:7px}
+        .mbtns button{flex:1}
+
+        /* LIGHT THEME */
+        #ec.lt{background:#fff;color:#2e3338}
+        #ec.lt .tb{color:#2e3338}
+        #ec.lt .uname{color:#060607}
+        #ec.lt .ts,.ec.lt .etag{color:#5c5e66}
+        #ec.lt .ew{background:#f2f3f5}
+        #ec.lt .rx{background:#f2f3f5}
+        #ec.lt .cdiv{color:#5c5e66}
+        #ec.lt .cdiv::before,#ec.lt .cdiv::after{background:rgba(0,0,0,.12)}
+        #ec.lt .sub .tb{color:#2e3338}
+        
+        /* CLAN TAG FIX: Light theme compatibility */
+        #ec.lt .ctag{background:#ebedef;color:#060607}
+
+        /* TOAST */
+        #toasts{position:fixed;bottom:18px;right:18px;z-index:999;display:flex;flex-direction:column;gap:6px}
+        .toast{background:#28292e;border:1px solid var(--border);color:#fff;padding:9px 16px;border-radius:9px;transform:translateX(120%);transition:.25s;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+        .toast.show{transform:translateX(0)}
+    </style>
+</head>
+<body spellcheck="false">
+
+<div id="banner">
+    <span>fakecord — load real Discord users, decorations &amp; clan tags · right-click reactions to delete</span>
+    <div class="close-x" onclick="this.parentElement.remove()"><i data-lucide="x" style="width:14px"></i></div>
+</div>
+<div id="toasts"></div>
+
+<div class="mo" id="tmod">
+    <div class="md">
+        <h2><i data-lucide="shield-check" style="width:17px;color:#7289da"></i> Bot Token</h2>
+        <p>Used only to call <code>GET /users/:id</code>. Never saved to disk — stays in browser memory for this session only.</p>
+        <div class="wn">⚠ Only use a token from a bot <em>you own and control</em>.</div>
+        <input type="password" id="tok-in" placeholder="Bot token  (MTI3NjM4…)" autocomplete="off" onkeydown="if(event.key==='Enter')saveTok()">
+        <div class="mbtns">
+            <button class="gh" onclick="closeMod('tmod')">Cancel</button>
+            <button class="dc" onclick="saveTok()"><i data-lucide="check" style="width:12px"></i> Save</button>
+        </div>
+    </div>
+</div>
+
+<div id="layout">
+    <div id="sidebar">
+        <div class="s-head">
+            <h1><i data-lucide="sparkles" style="color:var(--brand)"></i> fakecord</h1>
+            <div style="display:flex;gap:5px">
+                <button class="gh" style="width:auto;padding:7px 10px" onclick="toggleTheme()" title="Light/dark theme">
+                    <i data-lucide="sun-moon" style="width:13px"></i>
+                </button>
+                <button class="pri" style="width:auto;padding:7px 14px" onclick="exportImg()">
+                    <i data-lucide="download" style="width:13px"></i> Export
+                </button>
+            </div>
+        </div>
+        <div class="s-scroll">
+
+            <div class="p dp">
+                <div class="p-lbl"><i data-lucide="user-search" style="width:11px;color:#7289da"></i> Load Discord User</div>
+
+                <div style="display:flex;align-items:center;gap:7px;background:#111;border-radius:7px;padding:7px 10px">
+                    <div id="bdot"></div>
+                    <span id="blbl">Checking bridge…</span>
+                    <button class="gh" style="width:auto;padding:3px 7px;margin-left:auto;font-size:10px" onclick="checkBridge(true)" title="Retry">
+                        <i data-lucide="refresh-cw" style="width:10px"></i>
+                    </button>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab on" onclick="swTab(event,'bridge')">Bridge</div>
+                    <div class="tab" onclick="swTab(event,'direct')">Direct API</div>
+                </div>
+
+                <div class="tp on" id="tp-bridge">
+                    <div class="step"><span class="sn">1</span> Run the Python bridge once</div>
+                    <div style="font-size:10px;color:var(--muted);background:#111;border-radius:6px;padding:8px 10px;font-family:monospace;line-height:1.7">
+                        python fakecord_bridge.py<br>
+                        <span style="opacity:.5"># auto-detects port, no setup needed</span>
+                    </div>
+                    <div class="step"><span class="sn">2</span> Your bot token (stored in memory only)</div>
+                    <button class="am" id="tok-btn" onclick="openMod('tmod')">
+                        <i data-lucide="key" style="width:12px"></i> <span id="tok-lbl">Set Bot Token</span>
+                    </button>
+                    <div class="step"><span class="sn">3</span> Enter Discord User ID &amp; fetch</div>
+                    <input type="text" id="uid-b" placeholder="User ID  (e.g. 794967220839628800)" maxlength="20"
+                           onkeydown="if(event.key==='Enter')fetchBridge()">
+                    <button class="dc" onclick="fetchBridge()"><i data-lucide="download-cloud" style="width:12px"></i> Fetch via Bridge</button>
+                </div>
+
+                <div class="tp" id="tp-direct">
+                    <div class="step"><span class="sn">1</span> Set your bot token</div>
+                    <button class="am" id="tok-btn2" onclick="openMod('tmod')">
+                        <i data-lucide="key" style="width:12px"></i> <span id="tok-lbl2">Set Bot Token</span>
+                    </button>
+                    <div class="step"><span class="sn">2</span> Enter User ID</div>
+                    <input type="text" id="uid-d" placeholder="User ID" maxlength="20"
+                           onkeydown="if(event.key==='Enter')fetchDirect()">
+                    <button class="dc" onclick="fetchDirect()"><i data-lucide="zap" style="width:12px"></i> Fetch Directly</button>
+                    <div style="font-size:10px;color:var(--muted);line-height:1.5;padding:1px 2px">Discord blocks bot tokens via CORS — use Bridge if this fails.</div>
+                </div>
+
+                <div class="sbar" id="fstat"></div>
+
+                <div id="ucard">
+                    <div class="uca">
+                        <img class="av" id="uc-av" src="" alt="">
+                        <img class="dv" id="uc-dv" src="" alt="">
+                    </div>
+                    <div class="ui">
+                        <div class="un" id="uc-n"></div>
+                        <div class="uh" id="uc-h"></div>
+                        <div class="ubs" id="uc-b"></div>
+                    </div>
+                </div>
+
+                <div id="apl" style="display:none;flex-direction:column;gap:7px">
+                    <div class="p-div"></div>
+                    <div class="p-lbl" style="margin-bottom:0">Apply to selected message:</div>
+                    <div class="g2">
+                        <button class="gn" onclick="applyU('avatar')"><i data-lucide="image" style="width:11px"></i> Avatar</button>
+                        <button class="gn" onclick="applyU('name')"><i data-lucide="type" style="width:11px"></i> Name</button>
+                    </div>
+                    <div class="g2">
+                        <button id="btn-deco" onclick="applyU('decoration')" disabled><i data-lucide="sparkles" style="width:11px"></i> Decoration</button>
+                        <button id="btn-clan" onclick="applyU('clan')" disabled><i data-lucide="shield" style="width:11px"></i> Clan Tag</button>
+                    </div>
+                    <button class="gn" onclick="applyU('all')"><i data-lucide="zap" style="width:11px"></i> Apply Everything</button>
+                </div>
+            </div>
+
+            <div class="p">
+                <div class="p-lbl"><i data-lucide="layout-template" style="width:11px"></i> Canvas</div>
+                <button class="dc" onclick="addBlock()"><i data-lucide="plus-circle" style="width:13px"></i> New Message</button>
+                <div class="g2">
+                    <button onclick="dupBlock()"><i data-lucide="copy" style="width:12px"></i> Duplicate</button>
+                    <button onclick="deselectAll()"><i data-lucide="mouse-pointer-2" style="width:12px"></i> Deselect</button>
+                </div>
+                <input type="color" oninput="setBG(this.value)" value="#313338" title="Canvas background color">
+                <div class="g2">
+                    <button onclick="toggleCbar()"><i data-lucide="hash" style="width:12px"></i> Channel Bar</button>
+                    <button onclick="addDivider()"><i data-lucide="minus" style="width:12px"></i> Divider Line</button>
+                </div>
+            </div>
+
+            <div class="p">
+                <div class="p-lbl"><i data-lucide="message-square" style="width:11px"></i> Content</div>
+                <button onclick="addLine()"><i data-lucide="corner-down-right" style="width:13px"></i> New Line</button>
+                <div class="g2">
+                    <button onclick="insMention()">@ Mention</button>
+                    <button onclick="insLink()">Add Link</button>
+                </div>
+                <div class="g2">
+                    <button onclick="addRx()"><i data-lucide="smile" style="width:12px"></i> Reaction</button>
+                    <button onclick="togglePing()"><i data-lucide="highlighter" style="width:12px"></i> Ping BG</button>
+                </div>
+                <div class="g2">
+                    <button onclick="addEdited()"><i data-lucide="pencil" style="width:12px"></i> Edited mark</button>
+                    <button onclick="toggleTyping()"><i data-lucide="ellipsis" style="width:12px"></i> Typing…</button>
+                </div>
+            </div>
+
+            <div class="p">
+                <div class="p-lbl"><i data-lucide="user" style="width:11px"></i> Identity</div>
+                <input type="text" id="grad" placeholder="Username gradient  (#f00, #00f)" oninput="applyGrad(this.value)">
+                <div class="g2">
+                    <button onclick="trig('avatar')"><i data-lucide="image" style="width:12px"></i> Update PFP</button>
+                    <button onclick="trig('role')"><i data-lucide="upload" style="width:12px"></i> Role Icon</button>
+                </div>
+                <div class="g3">
+                    <button onclick="togVis('.btag')"><i data-lucide="bot" style="width:11px"></i> Bot tag</button>
+                    <button onclick="togVis('.ri')"><i data-lucide="award" style="width:11px"></i> Role ico</button>
+                    <button onclick="rmDeco()"><i data-lucide="circle-off" style="width:11px"></i> Deco</button>
+                </div>
+            </div>
+
+            <div class="p">
+                <div class="p-lbl"><i data-lucide="image" style="width:11px"></i> Rich Media</div>
+                <button onclick="insEmbed()"><i data-lucide="layout" style="width:13px"></i> Inject Embed</button>
+                <button onclick="trig('attach')"><i data-lucide="paperclip" style="width:13px"></i> Image Attachment</button>
+            </div>
+
+        </div>
+        <input type="file" id="fi" class="hidden" onchange="handleFile(this)">
+    </div>
+
+    <div id="ws" onclick="wsClick(event)">
+        <div id="cbar">
+            <i data-lucide="hash" style="width:15px;flex-shrink:0"></i>
+            <span id="cname" contenteditable="true">general</span>
+        </div>
+        <div id="ec">
+            <div class="mb sel" onclick="selBlock(this);event.stopPropagation()">
+                <div class="bc">
+                    <button class="cb" onclick="mvBlock(this,-1)" title="Up"><i data-lucide="chevron-up" style="width:13px"></i></button>
+                    <button class="cb" onclick="mvBlock(this,1)" title="Down"><i data-lucide="chevron-down" style="width:13px"></i></button>
+                    <button class="cb" onclick="dupBlock()" title="Duplicate"><i data-lucide="copy" style="width:13px"></i></button>
+                    <button class="cb del" onclick="delBlock(this)" title="Delete"><i data-lucide="trash-2" style="width:13px"></i></button>
+                </div>
+                <div class="mm">
+                    <div class="avs" onclick="event.stopPropagation();trigImg(this.querySelector('.av'))">
+                        <img src="https://i.redd.it/uqvmqo1cdj7f1.png" class="av">
+                    </div>
+                    <div class="cnt">
+                        <div class="uh2">
+                            <span class="uname" contenteditable="true">fakecord</span>
+                            <span class="btag hidden">APP</span>
+                            <img src="" class="ri hidden" onclick="trigImg(this)">
+                            <span class="ts" contenteditable="true">Today at 12:00</span>
+                        </div>
+                        <div class="tb" contenteditable="true">Click any text to edit it. Load a real Discord user from the panel. 🐊</div>
+                    </div>
+                </div>
+                <div class="ma"></div>
+                <div class="rxrow"></div>
+                <div class="typr"><div class="tdots"><span></span><span></span><span></span></div><span class="tytxt" contenteditable="true">Someone is typing…</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ══ STATE ══════════════════════════════
+let cur = document.querySelector('.mb');
+let upTgt = 'avatar', upImg = null;
+let botToken = null, loadedUser = null;
+let bridgePort = null, isLight = false;
+
+lucide.createIcons();
+
+// ══ UTILS ══════════════════════════════
+function toast(m) {
+    const t = Object.assign(document.createElement('div'), {className:'toast show', textContent:m});
+    document.getElementById('toasts').appendChild(t);
+    setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300)},2600);
+}
+function setStat(m,c) {
+    const el=document.getElementById('fstat');
+    el.textContent=m; el.className='sbar '+(c||'');
+}
+function openMod(id){document.getElementById(id).classList.add('open');lucide.createIcons()}
+function closeMod(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.mo').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}));
+
+function swTab(e,id) {
+    const panel = e.currentTarget.closest('.p');
+    panel.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+    panel.querySelectorAll('.tp').forEach(p=>p.classList.remove('on'));
+    e.currentTarget.classList.add('on');
+    document.getElementById('tp-'+id).classList.add('on');
+}
+
+// ══ BRIDGE ══════════════════════════════
+async function checkBridge(showMsg=false) {
+    const dot=document.getElementById('bdot'), lbl=document.getElementById('blbl');
+    let tryPorts=[];
+    if(bridgePort) tryPorts.push(bridgePort);
+    try{
+        const r=await fetch('bridge_port.txt',{cache:'no-store',signal:AbortSignal.timeout(1000)});
+        if(r.ok){const p=parseInt((await r.text()).trim());if(p>0&&!tryPorts.includes(p))tryPorts.unshift(p);}
+    }catch{}
+    for(const port of tryPorts){
+        try{
+            const r=await fetch(`http://127.0.0.1:${port}/ping`,{signal:AbortSignal.timeout(1500)});
+            if(r.ok){bridgePort=port;dot.className='ok';lbl.textContent=`Bridge online · :${port}`;if(showMsg)toast('Bridge connected!');return true;}
+        }catch{}
+    }
+    dot.className='err';
+    lbl.innerHTML='Bridge offline <span style="opacity:0.6;cursor:pointer;margin-left:5px;text-decoration:underline" title="If running as file://, click to enter manually" onclick="const p=prompt(\'Enter bridge port shown in python console:\');if(p){bridgePort=parseInt(p);checkBridge(true)}">(Set Port manually)</span>';
+    bridgePort=null;
+    if(showMsg)toast('Bridge not found');return false;
+}
+
+// ══ TOKEN ══════════════════════════════
+function saveTok(){
+    const v=document.getElementById('tok-in').value.trim();
+    if(!v){toast('No token entered');return;}
+    botToken=v;
+    document.getElementById('tok-in').value='';
+    ['tok-lbl','tok-lbl2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='✓ Token Set';});
+    ['tok-btn','tok-btn2'].forEach(id=>{const el=document.getElementById(id);if(el)el.className='gn';});
+    closeMod('tmod');toast('Token saved for this session');
+}
+
+// ══ FETCH VIA BRIDGE ══════════════════
+async function fetchBridge(){
+    const uid=document.getElementById('uid-b').value.trim();
+    if(!uid||!/^\d{17,20}$/.test(uid)){setStat('Invalid User ID (17–20 digits)','er');return;}
+    if(!botToken){openMod('tmod');return;}
+    if(!bridgePort){const ok=await checkBridge();if(!ok){setStat('Bridge offline — connect first','er');return;}}
+    setStat('Fetching via bridge…','ld');
+    try{
+        const r=await fetch(`http://127.0.0.1:${bridgePort}/fetch`,{
+            method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({token:botToken,userId:uid}),
+            signal:AbortSignal.timeout(22000)
+        });
+        const d=await r.json();
+        if(!r.ok){setStat(`Discord: ${d.error||r.status}`,'er');return;}
+        loadedUser=d;showUCard(d);setStat(`✓  ${d.display_name} (${d.handle})`,'ok');
+    }catch(err){
+        if(err.name==='TimeoutError')setStat('Timed out — bridge may have crashed','er');
+        else setStat(`Bridge error: ${err.message}`,'er');
+        bridgePort=null;checkBridge();
+    }
+}
+
+// ══ FETCH DIRECT ══════════════════════
+async function fetchDirect(){
+    if(!botToken){openMod('tmod');return;}
+    const uid=document.getElementById('uid-d').value.trim();
+    if(!uid||!/^\d{17,20}$/.test(uid)){setStat('Invalid User ID','er');return;}
+    setStat('Fetching from Discord…','ld');
+    try{
+        const r=await fetch(`https://discord.com/api/v10/users/${uid}`,{
+            headers:{'Authorization':`Bot ${botToken}`},signal:AbortSignal.timeout(10000)
+        });
+        if(!r.ok){const e=await r.json().catch(()=>({}));setStat(r.status===401?'Invalid token':r.status===404?'User not found':`Error: ${e.message||r.status}`,'er');return;}
+        await procUser(await r.json());
+    }catch(err){
+        setStat(err.message?.includes('Failed to fetch')||err.name==='TypeError'?'CORS blocked — use Bridge tab':`Error: ${err.message}`,'er');
+    }
+}
+
+const CDN='https://cdn.discordapp.com';
+async function toURI(url){
+    if(!url)return null;
+    try{const r=await fetch(url,{mode:'cors',signal:AbortSignal.timeout(8000)});const b=await r.blob();return new Promise((res,rej)=>{const f=new FileReader();f.onload=()=>res(f.result);f.onerror=rej;f.readAsDataURL(b);});}
+    catch{return url;}
+}
+async function procUser(u){
+    setStat('Downloading assets…','ld');
+    const ah=u.avatar;
+    const avUrl=ah?`${CDN}/avatars/${u.id}/${ah}.${ah.startsWith('a_')?'gif':'png'}?size=256`:`${CDN}/embed/avatars/${(parseInt(u.discriminator||'0')||Number(BigInt(u.id)>>22n)%6)}.png`;
+    const da=u.avatar_decoration_data?.asset;
+    const dvUrl=da?`${CDN}/avatar-decoration-presets/${da}.png?size=96&passthrough=true`:null;
+    const cb=u.clan?.badge&&u.clan?.identity_guild_id?`${CDN}/clan-badges/${u.clan.identity_guild_id}/${u.clan.badge}.png?size=16`:null;
+    const[avU,dvU,cbU]=await Promise.all([toURI(avUrl),toURI(dvUrl),toURI(cb)]);
+    const disc=u.discriminator||'0';
+    loadedUser={id:u.id,username:u.username,global_name:u.global_name,display_name:u.global_name||u.username,
+        handle:disc==='0'?`@${u.username}`:`${u.username}#${disc}`,discriminator:disc,bot:u.bot||false,
+        accent_color:u.accent_color?`#${u.accent_color.toString(16).padStart(6,'0')}`:'#5865f2',
+        avatar_data_uri:avU,avatar_url:avUrl,decoration_data_uri:dvU,decoration_url:dvUrl,
+        clan:u.clan?.tag?{tag:u.clan.tag,badge_data_uri:cbU,badge_url:cb}:null};
+    showUCard(loadedUser);setStat(`✓  ${loadedUser.display_name} (${loadedUser.handle})`,'ok');
+}
+
+// ══ USER CARD ══════════════════════════
+function showUCard(d){
+    document.getElementById('uc-av').src=d.avatar_data_uri||d.avatar_url||'';
+    const dv=document.getElementById('uc-dv'),ds=d.decoration_data_uri||d.decoration_url;
+    if(ds){dv.src=ds;dv.style.display='block';}else dv.style.display='none';
+    document.getElementById('uc-n').textContent=d.display_name||d.username;
+    document.getElementById('uc-h').textContent=d.handle||`@${d.username}`;
+    const b=document.getElementById('uc-b');b.innerHTML='';
+    if(d.bot)b.innerHTML+='<span class="bdg b-bot">BOT</span>';
+    if(ds)b.innerHTML+='<span class="bdg b-nit">Nitro</span>';
+    if(d.clan?.tag)b.innerHTML+=`<span class="bdg b-cln">${d.clan.tag}</span>`;
+    document.getElementById('ucard').classList.add('show');
+    document.getElementById('btn-deco').disabled=!ds;
+    document.getElementById('btn-clan').disabled=!d.clan?.tag;
+    const ap=document.getElementById('apl');ap.style.display='flex';ap.style.flexDirection='column';
+}
+
+// ══ APPLY ══════════════════════════════
+function applyU(what){
+    if(!loadedUser)return;const d=loadedUser;
+    if(what==='avatar'||what==='all'){
+        cur.querySelector('.av').src=d.avatar_data_uri||d.avatar_url;
+        cur.querySelector('.avs .dc')?.remove();
+    }
+    if(what==='decoration'||what==='all'){
+        const src=d.decoration_data_uri||d.decoration_url;
+        if(src){
+            const slot=cur.querySelector('.avs');
+            let deco=slot.querySelector('.dc');
+            if(!deco){deco=document.createElement('img');deco.className='dc';slot.appendChild(deco);}
+            deco.src=src;
+        }
+    }
+    if(what==='name'||what==='all'){
+        const n=cur.querySelector('.uname');
+        n.textContent=d.display_name||d.username;
+        n.style.background='none';n.style.webkitBackgroundClip='';n.style.webkitTextFillColor='';
+        n.style.color=(d.accent_color&&d.accent_color!=='#5865f2')?d.accent_color:'';
+        cur.querySelector('.btag').classList.toggle('hidden',!d.bot);
+    }
+    if(what==='clan'||what==='all'){
+        cur.querySelector('.ctag')?.remove();
+        if(d.clan?.tag){
+            const el=document.createElement('span');el.className='ctag';
+            const src=d.clan.badge_data_uri||d.clan.badge_url;
+            el.innerHTML=src?`<img src="${src}" alt=""> ${d.clan.tag}`:d.clan.tag;
+            const hd=cur.querySelector('.uh2');hd.insertBefore(el,hd.querySelector('.ts'));
+        }
+    }
+    toast(what==='all'?`Applied ${d.display_name}'s profile!`:`Applied ${what}`);
+    refreshEmoji();
+}
+
+// ══ BLOCKS ══════════════════════════════
+function selBlock(el){
+    document.querySelectorAll('.mb').forEach(b=>b.classList.remove('sel'));
+    el.classList.add('sel');cur=el;
+}
+function deselectAll(){document.querySelectorAll('.mb').forEach(b=>b.classList.remove('sel'));}
+function wsClick(e){
+    if(e.target===document.getElementById('ws')||e.target===document.getElementById('ec')) deselectAll();
+}
+
+function mkBlock(){
+    const d=document.createElement('div');
+    d.className='mb';
+    d.setAttribute('onclick','selBlock(this);event.stopPropagation()');
+    d.innerHTML=`<div class="bc">
+        <button class="cb" onclick="mvBlock(this,-1)" title="Up"><i data-lucide="chevron-up" style="width:13px"></i></button>
+        <button class="cb" onclick="mvBlock(this,1)" title="Down"><i data-lucide="chevron-down" style="width:13px"></i></button>
+        <button class="cb" onclick="dupBlock()" title="Duplicate"><i data-lucide="copy" style="width:13px"></i></button>
+        <button class="cb del" onclick="delBlock(this)" title="Delete"><i data-lucide="trash-2" style="width:13px"></i></button>
+    </div>
+    <div class="mm">
+        <div class="avs" onclick="event.stopPropagation();trigImg(this.querySelector('.av'))">
+            <img src="https://i.redd.it/uqvmqo1cdj7f1.png" class="av">
+        </div>
+        <div class="cnt">
+            <div class="uh2">
+                <span class="uname" contenteditable="true">User</span>
+                <span class="btag hidden">APP</span>
+                <img src="" class="ri hidden" onclick="trigImg(this)">
+                <span class="ts" contenteditable="true">Today at 12:00</span>
+            </div>
+            <div class="tb" contenteditable="true">Message…</div>
+        </div>
+    </div>
+    <div class="ma"></div>
+    <div class="rxrow"></div>
+    <div class="typr"><div class="tdots"><span></span><span></span><span></span></div><span class="tytxt" contenteditable="true">Someone is typing…</span></div>`;
+    return d;
+}
+
+function addBlock(){const b=mkBlock();document.getElementById('ec').appendChild(b);selBlock(b);lucide.createIcons();refreshEmoji();}
+function dupBlock(){
+    const cl=cur.cloneNode(true);cl.classList.remove('sel');
+    cur.after(cl);selBlock(cl);lucide.createIcons();refreshEmoji();
+}
+function delBlock(btn){
+    const b=btn.closest('.mb'),all=document.querySelectorAll('.mb');
+    if(all.length<=1)return;
+    const nx=b.previousElementSibling||b.nextElementSibling;
+    if(b===cur&&nx?.classList.contains('mb'))selBlock(nx);
+    b.remove();
+}
+function mvBlock(btn,dir){
+    const b=btn.closest('.mb');
+    if(dir===-1&&b.previousElementSibling?.classList.contains('mb'))b.previousElementSibling.before(b);
+    else if(dir===1&&b.nextElementSibling?.classList.contains('mb'))b.nextElementSibling.after(b);
+}
+
+// ══ CONTENT ══════════════════════════════
+function addLine(){
+    const s=document.createElement('div');s.className='sub';
+    s.innerHTML=`<div class="tb" contenteditable="true">Continued…</div>
+        <button class="rmb" onclick="this.parentElement.remove()"><i data-lucide="x" style="width:11px"></i></button>`;
+    cur.querySelector('.ma').before(s);lucide.createIcons();refreshEmoji();
+}
+function insEmbed(){
+    const w=document.createElement('div');w.className='ew';
+    w.innerHTML=`<div class="ep" style="background:#5865f2" onclick="const c=prompt('Hex color?');if(c)this.style.background=c" title="Click to change color"></div>
+        <div class="eb">
+            <button class="rmb" onclick="this.parentElement.parentElement.remove()"><i data-lucide="x" style="width:11px"></i></button>
+            <div class="ea"><img src="https://i.redd.it/uqvmqo1cdj7f1.png" onclick="trigImg(this)"><span contenteditable="true">Author</span></div>
+            <div class="et" contenteditable="true">Embed Title</div>
+            <div class="tb ed" contenteditable="true">Description…</div>
+        </div>`;
+    cur.querySelector('.ma').appendChild(w);lucide.createIcons();refreshEmoji();
+}
+function addRx(){
+    const row=cur.querySelector('.rxrow');
+    const r=document.createElement('div');r.className='rx';
+    r.innerHTML=`<span class="re" contenteditable="true">👍</span><span class="rc" contenteditable="true">1</span>`;
+    r.addEventListener('click',e=>{if(!e.target.hasAttribute('contenteditable'))r.classList.toggle('on');});
+    r.addEventListener('contextmenu',e=>{e.preventDefault();r.remove();});
+    row.appendChild(r);refreshEmoji();
+}
+function addEdited(){
+    const tb=cur.querySelector('.tb');
+    if(!tb.querySelector('.etag')){const t=document.createElement('span');t.className='etag';t.textContent='(edited)';tb.appendChild(t);}
+}
+function toggleTyping(){cur.querySelector('.typr').classList.toggle('show');}
+function addDivider(){
+    const d=document.createElement('div');d.className='cdiv';
+    d.innerHTML=`<span contenteditable="true">Today</span>`;
+    document.getElementById('ec').appendChild(d);
+}
+function toggleCbar(){
+    const b=document.getElementById('cbar');
+    b.style.display=b.style.display==='flex'?'none':'flex';
+    lucide.createIcons();
+}
+
+// ══ FILES ══════════════════════════════
+function trig(t){upTgt=t;upImg=null;document.getElementById('fi').click();}
+function trigImg(img){upTgt='specific';upImg=img;document.getElementById('fi').click();}
+function handleFile(inp){
+    if(!inp.files[0])return;
+    const r=new FileReader();
+    r.onload=e=>{
+        const s=e.target.result;
+        if(upTgt==='avatar')cur.querySelector('.av').src=s;
+        else if(upTgt==='role'){const i=cur.querySelector('.ri');i.src=s;i.classList.remove('hidden');}
+        else if(upTgt==='specific'&&upImg)upImg.src=s;
+        else if(upTgt==='attach'){
+            const w=document.createElement('div');w.className='aw';
+            w.innerHTML=`<button class="rmb" onclick="this.parentElement.remove()"><i data-lucide="x" style="width:11px"></i></button><img src="${s}">`;
+            cur.querySelector('.ma').appendChild(w);lucide.createIcons();
+        }
+    };
+    r.readAsDataURL(inp.files[0]);inp.value='';
+}
+
+// ══ IDENTITY ══════════════════════════════
+function applyGrad(v){
+    const n=cur.querySelector('.uname');
+    if(!v.trim()){n.style.background='none';n.style.webkitTextFillColor='';n.style.color='';return;}
+    n.style.background=`linear-gradient(90deg,${v})`;
+    n.style.webkitBackgroundClip='text';n.style.webkitTextFillColor='transparent';
+}
+function togVis(s){cur.querySelector(s).classList.toggle('hidden');}
+function rmDeco(){cur.querySelector('.avs .dc')?.remove();toast('Decoration removed');}
+function togglePing(){cur.classList.toggle('pinged');}
+function insMention(){cur.querySelector('.tb').innerHTML+=` <span class="mention" contenteditable="true">@user</span> `;refreshEmoji();}
+function insLink(){cur.querySelector('.tb').innerHTML+=` <a class="dcl" contenteditable="true">https://example.com</a> `;refreshEmoji();}
+
+// ══ CANVAS ══════════════════════════════
+function setBG(hex){document.getElementById('ec').style.backgroundColor=hex;}
+function toggleTheme(){isLight=!isLight;document.getElementById('ec').classList.toggle('lt',isLight);toast(isLight?'Light theme':'Dark theme');}
+
+// ══ EMOJI ══════════════════════════════
+function refreshEmoji(){
+    twemoji.parse(document.getElementById('ec'),{folder:'svg',ext:'.svg',base:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/'});
+}
+
+// ══ EXPORT ══════════════════════════════
+async function exportImg(){
+    toast('Rendering…');deselectAll();refreshEmoji();
+    await new Promise(r=>setTimeout(r,1200));
+    html2canvas(document.getElementById('ec'),{
+        backgroundColor:null,scale:2,useCORS:true,allowTaint:false,
+        onclone:doc=>{
+            doc.getElementById('ec').style.boxShadow='none';
+            doc.querySelectorAll('img.emoji').forEach(i=>i.style.display='inline-block');
+        }
+    }).then(canvas=>{
+        const a=document.createElement('a');
+        a.download=`fakecord-${Date.now()}.png`;a.href=canvas.toDataURL('image/png',1);a.click();
+        selBlock(cur);toast('Exported!');
+    });
+}
+
+// ══ INIT ══════════════════════════════
+window.onload=()=>{refreshEmoji();checkBridge();setInterval(checkBridge,10000);};
+document.addEventListener('input',e=>{
+    if(e.target?.getAttribute('contenteditable')==='true'){
+        clearTimeout(window._ed);window._ed=setTimeout(refreshEmoji,900);
+    }
+});
+document.addEventListener('keydown',e=>{
+    if(e.target?.getAttribute('contenteditable')==='true')return;
+    if(e.key==='Escape')deselectAll();
+});
+</script>
+</body>
+</html>
